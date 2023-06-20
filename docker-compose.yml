@@ -3,6 +3,10 @@ version: '3'
 services:
   db:
     image: mysql:5.7
+    container_name: mysql_db
+    command: --init-file /data/application/init.sql
+    volumes:
+      - ./init.sql:/data/application/init.sql
     environment:
       MYSQL_ROOT_PASSWORD: your_password
       MYSQL_DATABASE: test_db
