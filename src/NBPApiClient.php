@@ -1,7 +1,20 @@
 <?php
+require_once 'config.php';
+
 class NBPApiClient {
     private $baseURL = 'http://api.nbp.pl/api/exchangerates';
+    private $host;
+    private $user;
+    private $pass;
+    private $db;
 
+    public function __construct() {
+        // Database connection parameters
+        $this->host = DB_HOST;
+        $this->user = DB_USERNAME;
+        $this->pass = DB_PASSWORD;
+        $this->db = DB_NAME;
+    }
     /**
      * Fetches currency rates from the NBP API.
      * 
@@ -9,12 +22,8 @@ class NBPApiClient {
      * @param string $code      Currency code, e.g., USD, EUR
      * @param string $startDate Start date of the currency rates
      * @param string $endDate   End date of the currency rates
-     * @param string $host      Database host
-     * @param string $user      Database user
-     * @param string $pass      Database password
-     * @param string $db        Database name
      */
-    public function getCurrencyRates($table, $currencyCode, $startDate, $endDate, $host, $user, $pass, $db) {
+    public function getCurrencyRates($table, $currencyCode, $startDate, $endDate) {
         $url = "{$this->baseURL}/rates/{$table}/{$currencyCode}/{$startDate}/{$endDate}/";
         
         // Initialize the cURL session
@@ -40,7 +49,7 @@ class NBPApiClient {
         $data = json_decode($response, true);
 
         // Write data to the database
-        $conn = new mysqli($host, $user, $pass, $db);
+        $conn = new mysqli($this->host, $this->user, $this->pass, $this->db);
 
         if ($conn->connect_error) {
             throw new Exception("Database connection failed: " . $conn->connect_error);

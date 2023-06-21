@@ -1,48 +1,63 @@
 <?php
+require_once 'config.php';
 require_once 'NBPApiClient.php';
 require_once 'CurrencyRateTableGenerator.php';
 
-// Database connection parameters
-$host = 'db';
-$user = 'devuser';
-$pass = 'devpass';
-$db = 'test_db';
+class main {
+    private $host;
+    private $user;
+    private $pass;
+    private $db;
 
-// NBP API parameters
-$table = 'A';
-$currencyCode = 'USD';
-$startDate = '2023-06-01';
-$endDate = '2023-06-19';
+    public function __construct() {
+        // Database connection parameters
+        $this->host = DB_HOST;
+        $this->user = DB_USERNAME;
+        $this->pass = DB_PASSWORD;
+        $this->db = DB_NAME;
+    }
 
-// Create a connection to the database
-$conn = new mysqli($host, $user, $pass, $db);
+    public function run() {
+        // NBP API parameters
+        $table = 'A';
+        $currencyCode = 'USD';
+        $startDate = '2023-06-01';
+        $endDate = '2023-06-19';
 
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-} 
+        // Create a connection to the database
+        $conn = new mysqli($this->host, $this->user, $this->pass, $this->db);
 
-echo "Connected to MySQL server successfully!\n";
+        if ($conn->connect_error) {
+            die("Connection failed: " . $conn->connect_error);
+        } 
 
-// Fetch currency rates from the NBP API
-$client = new NBPApiClient();
+        echo "Connected to MySQL server successfully!\n";
 
-try {
-    $currencyRates = $client->getCurrencyRates($table, $currencyCode, $startDate, $endDate, $host, $user, $pass, $db);
-} catch (Exception $e) {
-    echo "Error: " . $e->getMessage();
+        // Fetch currency rates from the NBP API
+        $client = new NBPApiClient();
+
+        try {
+            $currencyRates = $client->getCurrencyRates($table, $currencyCode, $startDate, $endDate, $this->host, $this->user, $this->pass, $this->db);
+        } catch (Exception $e) {
+            echo "Error: " . $e->getMessage();
+        }
+
+
+        // Generate the table
+        $tableGenerator = new CurrencyRateTableGenerator();
+
+        try {
+            $table = $tableGenerator->generateTable($currencyCode, $this->host, $this->user, $this->pass, $this->db);
+            echo $table;
+        } catch (Exception $e) {
+            echo "Error: " . $e->getMessage();
+        }
+
+        // Close the connection
+        $conn->close();
+    }
 }
 
-
-// Generate the table
-$tableGenerator = new CurrencyRateTableGenerator();
-
-try {
-    $table = $tableGenerator->generateTable($currencyCode, $host, $user, $pass, $db);
-    echo $table;
-} catch (Exception $e) {
-    echo "Error: " . $e->getMessage();
-}
-
-// Close the connection
-$conn->close();
+$main = new main();
+$main->run();
 ?>
