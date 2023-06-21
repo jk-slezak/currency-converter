@@ -15,16 +15,12 @@ class NBPApiClient {
         $this->pass = DB_PASSWORD;
         $this->db = DB_NAME;
     }
+    
     /**
      * Fetches currency rates from the NBP API.
-     * 
-     * @param string $table     Table type, e.g., A, B, C - Table A provides average exchange rates
-     * @param string $code      Currency code, e.g., USD, EUR
-     * @param string $startDate Start date of the currency rates
-     * @param string $endDate   End date of the currency rates
      */
-    public function getCurrencyRates($table, $currencyCode, $startDate, $endDate) {
-        $url = "{$this->baseURL}/rates/{$table}/{$currencyCode}/{$startDate}/{$endDate}/";
+    public function getCurrencyRates() {
+        $url = "{$this->baseURL}/tables/A/";
         
         // Initialize the cURL session
         $curl = curl_init($url);
@@ -56,12 +52,12 @@ class NBPApiClient {
         }
         
         // Insert currency rates into the database
-        foreach ($data['rates'] as $rate) {
-            $date = $rate['effectiveDate'];
-            $rateValue = $rate['mid'];
+        foreach ($data[0]['rates'] as $rate) {
+            $code = $rate['code'];
+            $rate = $rate['mid'];
             
-            $sql = "INSERT INTO currency_rates (currency_code, date, rate) VALUES ('$currencyCode', '$date', $rateValue)";
-            
+            $sql = "INSERT INTO currency_rates (currency_code, rate) VALUES ('$code', $rate)";
+        
             if ($conn->query($sql) !== true) {
                 throw new Exception("Error inserting data: " . $conn->error);
             }
