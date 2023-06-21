@@ -1,22 +1,31 @@
 <?php
-/**
- * Generates a table with currency rates.
- * 
- * @param string $currencyCode Currency code, e.g., USD, EUR
- * @param string $host         Database host
- * @param string $user         Database user
- * @param string $pass         Database password
- * @param string $db           Database name
- */
+require_once 'config.php';
+
 class CurrencyRateTableGenerator {
-    public function generateTable($currencyCode, $host, $user, $pass, $db) {
-        $conn = new mysqli($host, $user, $pass, $db);
+    private $host;
+    private $user;
+    private $pass;
+    private $db;
+
+    public function __construct() {
+        // Database connection parameters
+        $this->host = DB_HOST;
+        $this->user = DB_USERNAME;
+        $this->pass = DB_PASSWORD;
+        $this->db = DB_NAME;
+    }
+    
+    /**
+     * Generates a table with currency rates.
+     */
+    public function generateTable() {
+        $conn = new mysqli($this->host, $this->user, $this->pass, $this->db);
 
         if ($conn->connect_error) {
             die("Connection failed: " . $conn->connect_error);
         }
 
-        $sql = "SELECT date, rate FROM currency_rates WHERE currency_code = '$currencyCode'";
+        $sql = "SELECT currency_code, rate FROM currency_rates";
     
         // Fetch currency rates from the database
         $result = $conn->query($sql);
@@ -25,20 +34,20 @@ class CurrencyRateTableGenerator {
         $table = "<table>
                     <thead>
                         <tr>
-                            <th>Date</th>
                             <th>Rate</th>
+                            <th>Code</th>
                         </tr>
                     </thead>
                     <tbody>";
 
         if ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
-                $date = $row['date'];
                 $rate = $row['rate'];
+                $code = $row['currency_code'];
 
                 $table .= "<tr>
-                              <td>$date</td>
                               <td>$rate</td>
+                              <td>$code</td>
                            </tr>";
             }
         } else {
