@@ -1,0 +1,63 @@
+generator client {
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Currency {
+  code  String         @id @db.Char(3)
+  name  String
+  rates ExchangeRate[]
+
+  @@map("currencies")
+}
+
+model RateTable {
+  id            Int            @id @default(autoincrement())
+  tableNo       String         @unique @map("table_no")
+  effectiveDate DateTime       @unique @map("effective_date") @db.Date
+  fetchedAt     DateTime       @default(now()) @map("fetched_at") @db.Timestamptz(3)
+  rates         ExchangeRate[]
+
+  @@map("rate_tables")
+}
+
+model ExchangeRate {
+  id           Int       @id @default(autoincrement())
+  currencyCode String    @map("currency_code") @db.Char(3)
+  rateTableId  Int       @map("rate_table_id")
+  /// PLN per 1 unit of the currency (NBP mid rate).
+  mid          Decimal   @db.Decimal(18, 8)
+  currency     Currency  @relation(fields: [currencyCode], references: [code])
+  rateTable    RateTable @relation(fields: [rateTableId], references: [id], onDelete: Cascade)
+
+  @@unique([currencyCode, rateTableId])
+  @@index([rateTableId])
+  @@map("exchange_rates")
+}
+
+enum SyncStatus {
+  RUNNING
+  SUCCEEDED
+  /// No NBP table that day: weekend or public holiday.
+  NO_DATA
+  FAILED
+
+  @@map("sync_status")
+}
+
+model SyncRun {
+  id            Int        @id @default(autoincrement())
+  startedAt     DateTime   @default(now()) @map("started_at") @db.Timestamptz(3)
+  finishedAt    DateTime?  @map("finished_at") @db.Timestamptz(3)
+  status        SyncStatus @default(RUNNING)
+  ratesUpserted Int        @default(0) @map("rates_upserted")
+  error         String?
+
+  @@map("sync_runs")
+}
